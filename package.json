@@ -1,0 +1,26 @@
+{
+  "name": "liferay-build-tools",
+  "version": "1.0.0",
+  "description": "Liferay Build Tools",
+  "main": "lib/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/izaera/liferay-build-tools.git"
+  },
+  "keywords": [
+    "babel",
+    "liferay",
+    "build",
+    "javascript",
+    "npm"
+  ],
+  "author": "ivan.zaera@liferay.com",
+  "license": "LGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/izaera/liferay-build-tools/issues"
+  },
+  "homepage": "https://github.com/izaera/liferay-build-tools#readme",
+  "scripts": {
+    "build": "lerna run build"
+  }
+}
