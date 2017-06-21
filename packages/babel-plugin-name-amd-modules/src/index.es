@@ -2,7 +2,8 @@
 // TODO: make paths separators work for Windoze
 // TODO: make paths work in case insensitive file systems
 
-const readJsonSync = require('read-json-sync');
+import path from 'path';
+import readJsonSync from 'read-json-sync';
 
 /**
  * options:
@@ -29,14 +30,16 @@ export default function({ types: t }) {
 
 						case 2:
 							insertName =
-								t.isArrayExpression(args[0]) && t.isFunctionExpression(args[1]);
+								t.isArrayExpression(args[0]) &&
+								t.isFunctionExpression(args[1]);
 							break;
 					}
 
 					if (insertName) {
 						const filenameRelative = this.opts._filenameRelative;
 						let sourceRoot =
-							this.opts.sourceRoot || 'src/main/resources/META-INF/resources/';
+							this.opts.sourceRoot ||
+							'src/main/resources/META-INF/resources/';
 
 						if (!sourceRoot.endsWith('/')) {
 							sourceRoot += '/';
@@ -45,16 +48,24 @@ export default function({ types: t }) {
 						let moduleName;
 
 						if (filenameRelative.startsWith(sourceRoot)) {
-							moduleName = filenameRelative.substring(sourceRoot.length);
+							moduleName = filenameRelative.substring(
+								sourceRoot.length
+							);
 
 							if (moduleName.toLowerCase().endsWith('.js')) {
-								moduleName = moduleName.substring(0, moduleName.length - 3);
+								moduleName = moduleName.substring(
+									0,
+									moduleName.length - 3
+								);
 							}
 
-							let packageName = this.opts.packageName || '<package.json>';
+							let packageName =
+								this.opts.packageName || '<package.json>';
 
 							if (packageName == '<package.json>') {
-								const pkgJson = readJsonSync('./package.json');
+								const pkgJson = getPackageJson(
+									filenameRelative
+								);
 
 								packageName = `${pkgJson.name}@${pkgJson.version}/`;
 							}
@@ -63,7 +74,9 @@ export default function({ types: t }) {
 								sourceRoot += '/';
 							}
 
-							args.unshift(t.stringLiteral(`${packageName}${moduleName}`));
+							args.unshift(
+								t.stringLiteral(`${packageName}${moduleName}`)
+							);
 						}
 					}
 				}
@@ -86,4 +99,18 @@ export default function({ types: t }) {
 	return {
 		visitor: visitor,
 	};
+}
+
+function getPackageJson(modulePath) {
+	let pkgJson = null;
+	let pkgJsonDir = path.resolve(modulePath);
+
+	while (pkgJson == null && pkgJsonDir != '') {
+		pkgJsonDir = path.parse(pkgJsonDir).dir;
+		try {
+			pkgJson = readJsonSync(`${pkgJsonDir}/package.json`);
+		} catch (err) {}
+	}
+
+	return pkgJson;
 }

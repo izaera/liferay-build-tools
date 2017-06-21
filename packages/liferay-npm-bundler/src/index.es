@@ -86,7 +86,9 @@ function runBabel(pkg, srcDir, outDir) {
 
 	if (proc.status != 0) {
 		throw new Error(
-			`Babel for ${srcDir} failed with error ${proc.status}:\n${proc.stderr}`
+			`Babel for ${srcDir} failed with error ${proc.status}:\n` +
+				`-- stdout: --\n${proc.stdout}\n` +
+				`-- stderr: --\n${proc.stderr}`
 		);
 	} else if (config['debug-babel']) {
 		console.log(proc.stdout.toString());
@@ -98,7 +100,8 @@ function copyPackage(pkg, dir) {
 		filter: file => {
 			const relFile = file.substring(pkg.dir.length);
 			return (
-				!relFile.startsWith('/node_modules/') && relFile != '/node_modules'
+				!relFile.startsWith('/node_modules/') &&
+				relFile != '/node_modules'
 			);
 		},
 	});
