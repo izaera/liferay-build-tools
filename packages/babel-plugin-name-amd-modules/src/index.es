@@ -11,8 +11,9 @@ import readJsonSync from 'read-json-sync';
  *		sourceRoot:	 'src/main/resources/META-INF/resources/'
  */
 export default function({ types: t }) {
-	const namespaceVisitor = {
-		ExpressionStatement({ node }) {
+	const nameVisitor = {
+		ExpressionStatement(path) {
+			const node = path.node;
 			const expression = node.expression;
 
 			if (t.isCallExpression(expression)) {
@@ -77,6 +78,8 @@ export default function({ types: t }) {
 							args.unshift(
 								t.stringLiteral(`${packageName}${moduleName}`)
 							);
+
+							path.stop();
 						}
 					}
 				}
@@ -91,7 +94,10 @@ export default function({ types: t }) {
 					_filenameRelative: state.file.opts.filenameRelative,
 				});
 
-				path.traverse(namespaceVisitor, { opts });
+				// We must traverse the AST again because the third party
+				// transform-es2015-modules-amd emits its define() call after
+				// Program exit :-(
+				path.traverse(nameVisitor, { opts });
 			},
 		},
 	};

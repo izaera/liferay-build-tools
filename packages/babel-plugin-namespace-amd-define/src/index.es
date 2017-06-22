@@ -6,7 +6,8 @@
  */
 export default function({ types: t }) {
 	const namespaceVisitor = {
-		ExpressionStatement({ node }) {
+		ExpressionStatement(path) {
+			const node = path.node;
 			const expression = node.expression;
 
 			if (t.isCallExpression(expression)) {
@@ -16,6 +17,8 @@ export default function({ types: t }) {
 					const namespace = this.opts.namespace || 'Liferay.Loader';
 
 					callee.name = `${namespace}.define`;
+
+					path.stop();
 				}
 			}
 		},
@@ -24,6 +27,9 @@ export default function({ types: t }) {
 	const visitor = {
 		Program: {
 			exit(path, { opts }) {
+				// We must traverse the AST again because the third party
+				// transform-es2015-modules-amd emits its define() call after
+				// Program exit :-(
 				path.traverse(namespaceVisitor, { opts });
 			},
 		},
