@@ -63,7 +63,7 @@ function copyRootPackageJson(outputDir) {
 function runBabel(pkg, srcDir, outDir) {
 	const babelRcPath = `${srcDir}/.babelrc`;
 
-	let pkgConfig = config['*'];
+	let pkgConfig = config['*'] || {};
 
 	if (config[pkg.id]) {
 		Object.assign(pkgConfig, config[pkg.id]);
