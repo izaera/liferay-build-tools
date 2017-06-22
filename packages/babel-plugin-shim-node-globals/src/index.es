@@ -5,9 +5,7 @@ import template from 'babel-template';
 var defaultNodeGlobals = {
 	Buffer: "var Buffer = require('buffer');",
 	__dirname: function(file) {
-		var dirname = file.path.substring(
-			process.cwd().length + srcDir.length + 1
-		);
+		var dirname = file.path.substring(process.cwd().length + srcDir.length + 1);
 		dirname = dirname.substring(0, dirname.lastIndexOf('/'));
 		return "var __dirname = '" + dirname + "';";
 	},
@@ -59,14 +57,13 @@ export default function({ types: t }) {
 						shim = shim(file);
 					}
 
-					if (!state.shims) {
-						state.shims = {};
-					}
-
 					state.shims[node.name] = shim;
 				}
 			},
 			Program: {
+				enter(path, state) {
+					state.shims = {};
+				},
 				exit({ node }, { shims }) {
 					Object.keys(shims).forEach(key => {
 						const buildShim = template(shims[key]);
