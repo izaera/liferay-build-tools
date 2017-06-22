@@ -7,44 +7,42 @@ const buildDefine = template(`
 `);
 
 export default function({ types: t }) {
-	const requireVisitor = {
-		Identifier(path, state) {
-			const node = path.node;
-
-			if (node.name === 'require') {
-				const parent = path.parent;
-
-				if (
-					t.isCallExpression(parent) &&
-					parent.callee === node &&
-					parent.arguments.length == 1
-				) {
-					const argument0 = parent.arguments[0];
-
-					if (t.isLiteral(argument0)) {
-						const moduleName = argument0.value;
-
-						this.dependencies[moduleName] = moduleName;
-					}
-				}
-			}
-		},
-	};
-
 	return {
 		visitor: {
+			Identifier(path, state) {
+				const node = path.node;
+
+				if (node.name === 'require') {
+					const parent = path.parent;
+
+					if (
+						t.isCallExpression(parent) &&
+						parent.callee === node &&
+						parent.arguments.length == 1
+					) {
+						const argument0 = parent.arguments[0];
+
+						if (t.isLiteral(argument0)) {
+							const moduleName = argument0.value;
+
+							state.dependencies[moduleName] = moduleName;
+						}
+					}
+				}
+			},
 			Program: {
-				exit(path, state) {
+				enter(path, state) {
+					state.dependencies = {};
+				},
+				exit(path, { dependencies }) {
 					const node = path.node;
 					const body = node.body;
 
-					let dependencies = {
+					Object.assign(dependencies, {
 						module: 'module',
 						exports: 'exports',
 						require: 'require',
-					};
-
-					path.traverse(requireVisitor, { dependencies });
+					});
 
 					dependencies = Object.keys(dependencies);
 
