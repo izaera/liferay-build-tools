@@ -38,20 +38,18 @@ export default function({ types: t }) {
 					const node = path.node;
 					const body = node.body;
 
-					Object.assign(dependencies, {
-						module: 'module',
-						exports: 'exports',
-						require: 'require',
-					});
+					dependencies = Object.keys(dependencies).map(dep => `'${dep}'`);
 
-					dependencies = Object.keys(dependencies);
+					const buildDeps = template(`[
+            'module', 'exports', 'require' 
+            ${dependencies.length > 0 ? ',' : ''} 
+            ${dependencies.join()}
+          ]`);
 
 					node.body = [
 						buildDefine({
 							SOURCE: body,
-							DEPS: t.arrayExpression(
-								dependencies.map(dep => t.stringLiteral(dep))
-							),
+							DEPS: buildDeps(),
 						}),
 					];
 				},
