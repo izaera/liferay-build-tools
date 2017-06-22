@@ -1,6 +1,9 @@
+// TODO: apply package.json plugins
+
 import { spawnSync } from 'child_process';
 import promisify from 'es6-promisify';
 import fs from 'fs';
+import minimatch from 'minimatch';
 import _ncp from 'ncp';
 import path from 'path';
 import readJsonSync from 'read-json-sync';
@@ -32,6 +35,8 @@ export default function(args) {
 	pkgs = pkgs.filter(pkg => pkg.dir != '.');
 
 	// Process NPM dependencies
+	const start = new Date().getTime();
+
 	pkgs.forEach(pkg => {
 		console.log(`Bundling ${pkg.id}`);
 
@@ -45,11 +50,17 @@ export default function(args) {
 			copyPackage(pkg, tmpPkgDir)
 				.then(() => runBabel(pkg, tmpPkgDir, outPkgDir))
 				.then(() => processPackage(pkg, tmpPkgDir, outPkgDir))
+				.then(() => console.log(`Bundled ${pkg.id}`))
 		);
 	});
 
 	Promise.all(promises)
-		.then(() => console.log('Correctly bundled NPM dependencies'))
+		.then(() =>
+			console.log(
+				`Bundled all dependencies in ${new Date().getTime() -
+					start} milliseconds`
+			)
+		)
 		.catch(function(err) {
 			console.log(err);
 			process.exit(1);
@@ -98,23 +109,22 @@ function runBabel(pkg, srcDir, outDir) {
 function copyPackage(pkg, dir) {
 	return ncp(pkg.dir, dir, {
 		filter: file => {
-			const relFile = file.substring(pkg.dir.length);
-			return (
-				!relFile.startsWith('/node_modules/') &&
-				relFile != '/node_modules'
-			);
+			const relFile = file.substring(pkg.dir.length + 1);
+
+			if (relFile == 'node_modules') return false;
+			if (relFile.startsWith('node_modules/')) return false;
+
+			let exclusions = config.exclude || {};
+			exclusions = exclusions[pkg.id] || [];
+
+			if (exclusions.some(exclusion => minimatch(relFile, exclusion))) {
+				return false;
+			}
+
+			return true;
 		},
 	});
 }
-
-// 'inject-package-dependencies': ['copy-packages'], // pkg
-// 'replace-browser-mains': ['copy-packages'], // pkg
-// 'replace-browser-modules': ['copy-packages'], // pkg
-// 'normalize-requires': ['replace-browser-mains', 'replace-browser-modules'], // babel
-// 'rewrite-browser-requires': ['normalize-requires'], // babel (creo que este ya no es necesario???)
-// 'shim-node-globals': ['rewrite-browser-requires'], // babel
-// 'shim-node-modules': ['shim-node-globals'], // babel + pkg
-// 'wrap-package-modules': ['shim-node-modules'], // babel
 
 function processPackage(pkg, srcDir, outDir) {
 	return new Promise((resolve, reject) => {
