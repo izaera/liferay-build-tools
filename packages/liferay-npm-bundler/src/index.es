@@ -1,16 +1,14 @@
 // TODO: apply package.json plugins
 
 import { spawnSync } from 'child_process';
-import promisify from 'es6-promisify';
+import cpFile from 'cp-file';
 import fs from 'fs';
+import globby from 'globby';
 import minimatch from 'minimatch';
-import _ncp from 'ncp';
+import cpy from 'cpy';
 import path from 'path';
 import readJsonSync from 'read-json-sync';
 import resolveModule from 'resolve';
-
-const ncp = promisify(_ncp.ncp);
-ncp.limit = 8;
 
 // Read config
 const config = readJsonSync('.npmbundlerrc');
@@ -41,7 +39,10 @@ export default function(args) {
 		console.log(`Bundling ${pkg.id}`);
 
 		const tmpPkgDir = `${tmpDir}/${pkg.id}`;
-		const outPkgDir = `${outputDir}/node_modules/${pkg.id}`;
+		const outPkgDir = `${outputDir}/node_modules/${pkg.id.replace(
+			'/',
+			'%2F'
+		)}`;
 
 		mkdirp(tmpPkgDir);
 		mkdirp(outPkgDir);
@@ -68,77 +69,84 @@ export default function(args) {
 }
 
 function copyRootPackageJson(outputDir) {
-	return ncp('package.json', `${outputDir}/package.json`);
-}
-
-function runBabel(pkg, srcDir, outDir) {
-	const babelRcPath = `${srcDir}/.babelrc`;
-
-	let pkgConfig = config['*'] || {};
-
-	if (config[pkg.id]) {
-		Object.assign(pkgConfig, config[pkg.id]);
-	}
-
-	// Put a .babelrc in the package
-	let babelRc = JSON.stringify(pkgConfig['.babelrc']);
-	babelRc = babelRc.replace('{{SRC_DIR}}', srcDir);
-	babelRc = babelRc.replace('{{OUT_DIR}}', outDir);
-	fs.writeFileSync(babelRcPath, babelRc);
-
-	// Run babel through packages
-	const proc = spawnSync('babel', [
-		'--source-maps',
-		'-D',
-		'-d',
-		outDir,
-		srcDir,
-	]);
-
-	if (proc.status != 0) {
-		throw new Error(
-			`Babel for ${srcDir} failed with error ${proc.status}:\n` +
-				`-- stdout: --\n${proc.stdout}\n` +
-				`-- stderr: --\n${proc.stderr}`
-		);
-	} else if (config['debug-babel']) {
-		console.log(proc.stdout.toString());
-	}
+	return cpy('package.json', outputDir);
 }
 
 function copyPackage(pkg, dir) {
-	return ncp(pkg.dir, dir, {
-		filter: file => {
-			const relFile = file.substring(pkg.dir.length + 1);
+	let globs = [`${pkg.dir}/**/*`, `!${pkg.dir}/node_modules/**/*`];
 
-			if (relFile == 'node_modules') return false;
-			if (relFile.startsWith('node_modules/')) return false;
+	let exclusions = config.exclude || {};
+	exclusions = exclusions[pkg.id] || [];
 
-			let exclusions = config.exclude || {};
-			exclusions = exclusions[pkg.id] || [];
+	globs = globs.concat(
+		exclusions.map(exclusion => `!${pkg.dir}/${exclusion}`)
+	);
 
-			if (exclusions.some(exclusion => minimatch(relFile, exclusion))) {
-				return false;
-			}
+	return globby(globs).then(paths => {
+		paths = paths.map(path => path.substring(pkg.dir.length + 1));
 
-			return true;
-		},
+		const promises = paths.map(path =>
+			cpFile(`${pkg.dir}/${path}`, `${dir}/${path}`).catch(err => {})
+		);
+
+		return Promise.all(promises);
+	});
+}
+
+function runBabel(pkg, srcDir, outDir) {
+	return new Promise((resolve, reject) => {
+		const babelRcPath = `${srcDir}/.babelrc`;
+
+		let pkgConfig = config['*'] || {};
+
+		if (config[pkg.id]) {
+			Object.assign(pkgConfig, config[pkg.id]);
+		}
+
+		// Put a .babelrc in the package
+		let babelRc = JSON.stringify(pkgConfig['.babelrc']);
+		babelRc = babelRc.replace('{{SRC_DIR}}', srcDir);
+		babelRc = babelRc.replace('{{OUT_DIR}}', outDir);
+		fs.writeFileSync(babelRcPath, babelRc);
+
+		// Run babel through packages
+		const proc = spawnSync('babel', [
+			'--source-maps',
+			'-D',
+			'-d',
+			outDir,
+			srcDir,
+		]);
+
+		if (proc.status != 0) {
+			reject(
+				new Error(
+					`Babel for ${srcDir} failed with error ${proc.status}:\n` +
+						`-- stdout: --\n${proc.stdout}\n` +
+						`-- stderr: --\n${proc.stderr}`
+				)
+			);
+		} else if (config['debug-babel']) {
+			console.log(proc.stdout.toString());
+		}
+
+		resolve();
 	});
 }
 
 function processPackage(pkg, srcDir, outDir) {
 	return new Promise((resolve, reject) => {
-		resolve();
-		/*
-		const pkgJson = readJsonSync(`${srcDir}/package.json`);
+		const pkgJsonPath = `${outDir}/package.json`;
+		const pkgJson = readJsonSync(pkgJsonPath);
 
 		let state = {
 			pkgJson: pkgJson,
 		};
 
-		let pkgConfig = config['*'];
+		let pkgConfig = config['*'] || {};
+		pkgConfig = pkgConfig['plugins'] || [];
 
-		if (config[pkg.id]) {
+		if (config[pkg.id] && config[pkg.id]['plugins']) {
 			Object.assign(pkgConfig, config[pkg.id]);
 		}
 
@@ -166,13 +174,14 @@ function processPackage(pkg, srcDir, outDir) {
 				const plugin = require(pluginFile).default;
 
 				plugin({ srcDir, outDir, config: pluginConfig }, state);
-
-				resolve();
 			} catch (err) {
 				reject(err);
 			}
 		});
-		*/
+
+		fs.writeFileSync(pkgJsonPath, JSON.stringify(state.pkgJson, '', 2));
+
+		resolve();
 	});
 }
 
