@@ -7,53 +7,62 @@ const buildDefine = template(`
 `);
 
 export default function({ types: t }) {
-	return {
-		visitor: {
-			Identifier(path, state) {
-				const node = path.node;
+	const wrapVisitor = {
+		Identifier(path, state) {
+			const node = path.node;
 
-				if (node.name === 'require') {
-					const parent = path.parent;
+			if (node.name === 'require') {
+				const parent = path.parent;
 
-					if (
-						t.isCallExpression(parent) &&
-						parent.callee === node &&
-						parent.arguments.length == 1
-					) {
-						const argument0 = parent.arguments[0];
+				if (
+					t.isCallExpression(parent) &&
+					parent.callee === node &&
+					parent.arguments.length == 1
+				) {
+					const argument0 = parent.arguments[0];
 
-						if (t.isLiteral(argument0)) {
-							const moduleName = argument0.value;
+					if (t.isLiteral(argument0)) {
+						const moduleName = argument0.value;
 
-							state.dependencies[moduleName] = moduleName;
-						}
+						state.dependencies[moduleName] = moduleName;
 					}
 				}
+			}
+		},
+	};
+
+	const visitor = {
+		Program: {
+			enter(path, state) {
+				state.dependencies = {};
 			},
-			Program: {
-				enter(path, state) {
-					state.dependencies = {};
-				},
-				exit(path, { dependencies }) {
-					const node = path.node;
-					const body = node.body;
+			exit(path, { opts, dependencies }) {
+				// We must traverse the AST again because some plugins emit
+				// their define() calls after Program exit :-(
+				path.traverse(wrapVisitor, { opts, dependencies });
 
-					dependencies = Object.keys(dependencies).map(dep => `'${dep}'`);
+				const node = path.node;
+				const body = node.body;
 
-					const buildDeps = template(`[
-            'module', 'exports', 'require' 
-            ${dependencies.length > 0 ? ',' : ''} 
-            ${dependencies.join()}
-          ]`);
+				dependencies = Object.keys(dependencies).map(dep => `'${dep}'`);
 
-					node.body = [
-						buildDefine({
-							SOURCE: body,
-							DEPS: buildDeps(),
-						}),
-					];
-				},
+				const buildDeps = template(`[
+                    'module', 'exports', 'require' 
+                    ${dependencies.length > 0 ? ',' : ''} 
+                    ${dependencies.join()}
+                ]`);
+
+				node.body = [
+					buildDefine({
+						SOURCE: body,
+						DEPS: buildDeps(),
+					}),
+				];
 			},
 		},
+	};
+
+	return {
+		visitor: visitor,
 	};
 }
