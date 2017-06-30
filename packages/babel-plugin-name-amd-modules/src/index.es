@@ -1,18 +1,18 @@
-// TODO: check for global context
-// TODO: make paths separators work for Windoze
-// TODO: make paths work in case insensitive file systems
+// TODO: check that define is called in global context
+// TODO: check that module names are correct in Windoze
 
+import { getPackageDir, getPackageJsonPath } from 'liferay-build-tools-util';
 import path from 'path';
 import readJsonSync from 'read-json-sync';
 
 /**
  * options:
  *	  packageName: '<package.json>'
- *		sourceRoot:	 'src/main/resources/META-INF/resources/'
+ *    srcPrefixes: ['src/main/resources/META-INF/resources']
  */
 export default function({ types: t }) {
 	const nameVisitor = {
-		ExpressionStatement(path) {
+		ExpressionStatement(path, { opts }) {
 			const node = path.node;
 			const expression = node.expression;
 
@@ -37,86 +37,90 @@ export default function({ types: t }) {
 					}
 
 					if (insertName) {
-						const filenameRelative = this.opts._filenameRelative;
-						let sourceRoot =
-							this.opts.sourceRoot ||
-							'src/main/resources/META-INF/resources/';
+						const packageName = getPackageName(
+							this.opts.packageName,
+							this.filenameRelative
+						);
 
-						if (!sourceRoot.endsWith('/')) {
-							sourceRoot += '/';
-						}
+						const moduleName = getModuleName(
+							this.filenameRelative,
+							getSrcPrefixes(opts)
+						);
 
-						let moduleName;
+						args.unshift(
+							t.stringLiteral(`${packageName}${moduleName}`)
+						);
 
-						if (filenameRelative.startsWith(sourceRoot)) {
-							moduleName = filenameRelative.substring(
-								sourceRoot.length
-							);
-
-							if (moduleName.toLowerCase().endsWith('.js')) {
-								moduleName = moduleName.substring(
-									0,
-									moduleName.length - 3
-								);
-							}
-
-							let packageName =
-								this.opts.packageName || '<package.json>';
-
-							if (packageName == '<package.json>') {
-								const pkgJson = getPackageJson(
-									filenameRelative
-								);
-
-								packageName = `${pkgJson.name}@${pkgJson.version}/`;
-							}
-
-							if (!packageName.endsWith('/')) {
-								sourceRoot += '/';
-							}
-
-							args.unshift(
-								t.stringLiteral(`${packageName}${moduleName}`)
-							);
-
-							path.stop();
-						}
+						path.stop();
 					}
 				}
 			}
 		},
 	};
 
-	const visitor = {
-		Program: {
-			exit(path, state) {
-				const opts = Object.assign({}, state.opts, {
-					_filenameRelative: state.file.opts.filenameRelative,
-				});
-
-				// We must traverse the AST again because the third party
-				// transform-es2015-modules-amd emits its define() call after
-				// Program exit :-(
-				path.traverse(nameVisitor, { opts });
+	return {
+		visitor: {
+			Program: {
+				exit(path, state) {
+					// We must traverse the AST again because the
+					// transform-es2015-modules-amd plugin emits its define()
+					// call after exiting Program node :-(
+					path.traverse(nameVisitor, {
+						filenameRelative: state.file.opts.filenameRelative,
+						opts: state.opts,
+					});
+				},
 			},
 		},
 	};
-
-	return {
-		visitor: visitor,
-	};
 }
 
-function getPackageJson(modulePath) {
-	let pkgJson = null;
-	let pkgJsonDir = path.resolve(modulePath);
+function getPackageName(packageName, filenameRelative) {
+	packageName = packageName || '<package.json>';
 
-	while (pkgJson == null && pkgJsonDir != '') {
-		pkgJsonDir = path.parse(pkgJsonDir).dir;
-		try {
-			pkgJson = readJsonSync(`${pkgJsonDir}/package.json`);
-		} catch (err) {}
+	if (packageName === '<package.json>') {
+		const pkgJsonPath = getPackageJsonPath(filenameRelative);
+		const pkgJson = readJsonSync(pkgJsonPath);
+
+		packageName = `${pkgJson.name}@${pkgJson.version}/`;
 	}
 
-	return pkgJson;
+	if (!packageName.endsWith('/')) {
+		packageName += '/';
+	}
+
+	return packageName;
+}
+
+function getModuleName(filenameRelative, srcPrefixes) {
+	const filenameAbsolute = path.resolve(filenameRelative);
+	const pkgDir = getPackageDir(filenameRelative);
+
+	let moduleName = filenameAbsolute.substring(pkgDir.length + 1);
+
+	if (moduleName.toLowerCase().endsWith('.js')) {
+		moduleName = moduleName.substring(0, moduleName.length - 3);
+	}
+
+	for (let i = 0; i < srcPrefixes.length; i++) {
+		const srcPrefix = srcPrefixes[i];
+
+		if (moduleName.startsWith(srcPrefix)) {
+			moduleName = moduleName.substring(srcPrefix.length);
+			break;
+		}
+	}
+
+	return moduleName;
+}
+
+function getSrcPrefixes(opts) {
+	let srcPrefixes = opts.srcPrefixes || [
+		'src/main/resources/META-INF/resources',
+	];
+
+	return srcPrefixes.map(
+		srcPrefix =>
+			srcPrefix.endsWith(path.sep) ? srcPrefix : srcPrefix + path.sep
+	);
 }

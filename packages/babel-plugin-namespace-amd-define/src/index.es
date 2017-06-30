@@ -1,4 +1,4 @@
-// TODO: check for global context
+// TODO: check that define is called in global context
 
 /**
  * options:
@@ -24,18 +24,16 @@ export default function({ types: t }) {
 		},
 	};
 
-	const visitor = {
-		Program: {
-			exit(path, { opts }) {
-				// We must traverse the AST again because the third party
-				// transform-es2015-modules-amd emits its define() call after
-				// Program exit :-(
-				path.traverse(namespaceVisitor, { opts });
+	return {
+		visitor: {
+			Program: {
+				exit(path, { opts }) {
+					// We must traverse the AST again because the third party
+					// transform-es2015-modules-amd emits its define() call after
+					// Program exit :-(
+					path.traverse(namespaceVisitor, { opts });
+				},
 			},
 		},
-	};
-
-	return {
-		visitor: visitor,
 	};
 }

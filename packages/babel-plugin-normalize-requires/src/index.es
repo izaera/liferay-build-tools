@@ -16,11 +16,17 @@ export default function({ types: t }) {
 
 								if (typeof moduleName === 'string') {
 									if (moduleName.endsWith('.js')) {
-										moduleName = moduleName.substring(0, moduleName.length - 3);
+										moduleName = moduleName.substring(
+											0,
+											moduleName.length - 3
+										);
 									}
 
 									if (moduleName.endsWith('/')) {
-										moduleName = moduleName.substring(0, moduleName.length - 1);
+										moduleName = moduleName.substring(
+											0,
+											moduleName.length - 1
+										);
 									}
 								}
 
