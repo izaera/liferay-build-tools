@@ -1,10 +1,11 @@
 {
   "name": "babel-plugin-wrap-modules-amd",
-  "version": "0.2.0",
+  "version": "0.2.3",
   "description": "A Babel plugin to wrap package modules inside AMD define() calls.",
   "main": "lib/index.js",
   "scripts": {
-    "build": "babel --source-maps -D -d lib src"
+    "build": "babel --source-maps -D -d lib src",
+    "prepublish": "babel --source-maps -D -d lib src"
   },
   "devDependencies": {
     "babel-cli": "^6.24.1",
