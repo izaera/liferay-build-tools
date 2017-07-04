@@ -15,6 +15,7 @@
     "babel-preset-es2015": "^6.24.1"
   },
   "dependencies": {
+    "babel-core": "^6.25.0",
     "cp-file": "^4.2.0",
     "globby": "^6.1.0",
     "liferay-build-tools-util": "^0.4.0",
