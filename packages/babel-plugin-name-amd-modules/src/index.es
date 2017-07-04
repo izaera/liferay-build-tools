@@ -1,4 +1,3 @@
-// TODO: check that define is called in global context
 // TODO: check that module names are correct in Windoze
 
 import { getPackageDir, getPackageJsonPath } from 'liferay-build-tools-util';
@@ -22,7 +21,8 @@ export default function({ types: t }) {
 				if (t.isIdentifier(callee, { name: 'define' })) {
 					const args = expression.arguments;
 
-					let insertName = false;
+					let insertName = false,
+						unshiftName = true;
 
 					switch (args.length) {
 						case 1:
@@ -33,6 +33,14 @@ export default function({ types: t }) {
 							insertName =
 								t.isArrayExpression(args[0]) &&
 								t.isFunctionExpression(args[1]);
+							break;
+
+						case 3:
+							unshiftName = false;
+							insertName =
+								t.isStringLiteral(args[0]) &&
+								t.isArrayExpression(args[1]) &&
+								t.isFunctionExpression(args[2]);
 							break;
 					}
 
@@ -47,9 +55,13 @@ export default function({ types: t }) {
 							getSrcPrefixes(opts)
 						);
 
-						args.unshift(
-							t.stringLiteral(`${packageName}${moduleName}`)
-						);
+						if (unshiftName) {
+							args.unshift(
+								t.stringLiteral(`${packageName}${moduleName}`)
+							);
+						} else {
+							args[0].value = `${packageName}${moduleName}`;
+						}
 
 						path.stop();
 					}
