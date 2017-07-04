@@ -1,6 +1,6 @@
 {
   "name": "babel-plugin-namespace-amd-define",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "description": "A Babel plugin to namespace AMD define() calls.",
   "main": "lib/index.js",
   "scripts": {
