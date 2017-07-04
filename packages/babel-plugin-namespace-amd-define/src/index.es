@@ -1,5 +1,3 @@
-// TODO: check that define is called in global context
-
 /**
  * options:
  *		namespace: 'Liferay.Loader'
