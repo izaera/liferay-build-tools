@@ -5,7 +5,7 @@ import * as node from 'liferay-build-tools-util/lib/node';
 var nodeGlobals = {
 	__dirname: node.defaultGlobals.__dirname,
 	__filename: node.defaultGlobals.__filename,
-	global: node.defaultNodeGlobals.global,
+	global: node.defaultGlobals.global,
 	process: "var process = {env:{NODE_ENV: 'production'}};",
 };
 
@@ -23,7 +23,11 @@ export default function({ types: t }) {
 					capture = true;
 				}
 
-				if (capture && nodeGlobals[node.name] != null) {
+				if (
+					capture &&
+					nodeGlobals.hasOwnProperty(node.name) &&
+					nodeGlobals[node.name] != null
+				) {
 					var shim = nodeGlobals[node.name];
 
 					if (typeof shim == 'function') {
