@@ -1,10 +1,10 @@
 {
   "name": "liferay-npm-bundler-preset-vue",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Vue.js configuration for liferay-npm-bundler.",
   "main": "config.json",
   "dependencies": {
-    "babel-preset-liferay-standard": "^0.3.0",
-    "liferay-npm-bundler-plugin-replace-browser-modules": "^0.3.0"
+    "babel-preset-liferay-standard": "^0.4.0",
+    "liferay-npm-bundler-plugin-replace-browser-modules": "^0.4.0"
   }
 }
