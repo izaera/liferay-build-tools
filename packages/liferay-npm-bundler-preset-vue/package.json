@@ -1,6 +1,6 @@
 {
   "name": "liferay-npm-bundler-preset-vue",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Vue.js configuration for liferay-npm-bundler.",
   "main": "config.json",
   "dependencies": {

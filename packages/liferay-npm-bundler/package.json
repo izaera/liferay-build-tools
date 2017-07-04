@@ -1,6 +1,6 @@
 {
   "name": "liferay-npm-bundler",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "A CLI utility to bundle NPM dependencies of a Liferay OSGi bundle.",
   "main": "lib/index.js",
   "bin": {

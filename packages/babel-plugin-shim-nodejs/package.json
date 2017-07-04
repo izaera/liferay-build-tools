@@ -1,6 +1,6 @@
 {
   "name": "babel-plugin-shim-nodejs",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "A Babel plugin to shim Node.js global objects and modules.",
   "main": "lib/index.js",
   "scripts": {

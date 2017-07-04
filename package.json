@@ -1,6 +1,6 @@
 {
   "name": "liferay-build-tools",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Liferay Build Tools",
   "main": "lib/index.js",
   "repository": {
