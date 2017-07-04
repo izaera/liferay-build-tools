@@ -1,5 +1,4 @@
 import * as babel from 'babel-core';
-import cpy from 'cpy';
 import cpFile from 'cp-file';
 import fs from 'fs';
 import globby from 'globby';
@@ -64,7 +63,7 @@ export default function(args) {
 }
 
 function copyRootPackageJson(outputDir) {
-	return cpy('package.json', outputDir);
+	return cpFile('package.json', `${outputDir}/package.json`);
 }
 
 function copyPackage(pkg, dir) {
