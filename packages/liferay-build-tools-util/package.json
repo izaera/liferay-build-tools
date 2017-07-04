@@ -1,6 +1,6 @@
 {
   "name": "liferay-build-tools-util",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Utility library for Liferay build tools.",
   "main": "lib/index.js",
   "scripts": {
