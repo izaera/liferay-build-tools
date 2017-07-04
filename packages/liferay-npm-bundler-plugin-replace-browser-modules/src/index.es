@@ -1,14 +1,13 @@
 import fs from 'fs';
 
-export default function({ srcDir, outDir, config }, { pkgJson }) {
-	const pkgId = `${pkgJson.name}@${pkgJson.version}`;
+export default function({ pkg, config }, { pkgJson }) {
 	const browser = pkgJson.browser;
 
 	if (browser) {
 		if (typeof browser === 'string') {
-			replaceMainModule(outDir, pkgJson);
+			replaceMainModule(pkg.dir, pkgJson);
 		} else {
-			replaceModules(outDir, pkgJson);
+			replaceModules(pkg.dir, pkgJson);
 		}
 	}
 }
@@ -46,17 +45,23 @@ function replaceFile(pkgId, src, srcName, dest, destName) {
 	const srcModuleName = srcName.replace('.js', '');
 	const destModuleName = destName.replace('.js', '');
 
-	let contents = fs.readFileSync(src).toString();
-	contents = contents.replace(
-		`'${pkgId}/${srcModuleName}'`,
-		`'${pkgId}/${destModuleName}'`
-	);
+	try {
+		let contents = fs.readFileSync(src).toString();
+		contents = contents.replace(
+			`'${pkgId}/${srcModuleName}'`,
+			`'${pkgId}/${destModuleName}'`
+		);
 
-	fs.writeFileSync(
-		dest,
-		'/* Module replaced with ' +
-			srcName +
-			' by liferay-npm-bundler-plugin-replace-browser-modules */\n' +
-			contents
-	);
+		fs.writeFileSync(
+			dest,
+			'/* Module replaced with ' +
+				srcName +
+				' by liferay-npm-bundler-plugin-replace-browser-modules */\n' +
+				contents
+		);
+	} catch (err) {
+		if (err.code !== 'ENOENT') {
+			throw err;
+		}
+	}
 }

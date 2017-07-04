@@ -16,7 +16,7 @@
   "dependencies": {
     "cp-file": "^4.2.0",
     "globby": "^6.1.0",
-    "minimatch": "^3.0.4",
+    "liferay-build-tools-util": "^1.0.0",
     "read-json-sync": "^1.1.1",
     "resolve": "^1.3.3"
   }
