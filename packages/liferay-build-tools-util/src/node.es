@@ -4,18 +4,18 @@ import { getPackageDir } from './index';
 // Get the full list from https://nodejs.org/docs/latest/api/globals.html
 export const defaultGlobals = {
 	Buffer: "var Buffer = require('liferay-node-buffer');",
-	__dirname: function(file) {
-		const pkgDir = getPackageDir(file);
+	__dirname: function(filePath) {
+		const pkgDir = getPackageDir(filePath);
 
-		let dirname = file.path.substring(pkgDir.length + 1);
+		let dirname = filePath.substring(pkgDir.length + 1);
 		dirname = dirname.substring(0, dirname.lastIndexOf('/'));
 
 		return `var __dirname = '${dirname}';`;
 	},
-	__filename: function(file) {
-		const pkgDir = getPackageDir(file);
+	__filename: function(filePath) {
+		const pkgDir = getPackageDir(filePath);
 
-		let filename = file.path.substring(pkgDir.length + 1);
+		let filename = filePath.substring(pkgDir.length + 1);
 
 		return `var __filename = '${filename}';`;
 	},
