@@ -1,3 +1,5 @@
+// TODO: move this to shim-nodejs plugin and decouple node-vars or use babel-plugin-transform-node-env-inline
+
 import { getPackageDir } from './index';
 
 // List of built-in Node.js v7.10.0 globals.

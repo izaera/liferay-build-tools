@@ -1,3 +1,5 @@
+// TODO: have a look at use babel-plugin-transform-node-env-inline to get rid of this plugin
+
 import template from 'babel-template';
 import { getPackageJsonPath } from 'liferay-build-tools-util';
 import * as node from 'liferay-build-tools-util/lib/node';
