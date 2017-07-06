@@ -10,10 +10,9 @@ import * as config from './config';
 import { getPackageDependencies } from './dependencies';
 
 export default function(args) {
-	// TODO: make stuff configurable
-	const outputDir = 'build/resources/main/META-INF/resources';
-
 	let promises = [];
+
+	const outputDir = config.getOutputDir();
 
 	// Create work directories
 	mkdirp(`${outputDir}/node_modules`);
@@ -157,10 +156,6 @@ function runBabel(pkg) {
 									`${filePath}.map`,
 									JSON.stringify(result.map)
 								);
-
-								if (config.isDebugBabelActive()) {
-									console.log(stdout);
-								}
 
 								resolve();
 							}

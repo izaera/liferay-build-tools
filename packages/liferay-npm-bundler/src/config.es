@@ -13,7 +13,7 @@ function loadConfig() {
 			basedir: '.',
 		});
 
-		config = readJsonSync(presetFile);
+		config = Object.assign(readJsonSync(presetFile), config);
 		pluginsBaseDir = getPackageDir(presetFile);
 	}
 
@@ -28,8 +28,8 @@ function configRequire(module) {
 	return require(pluginFile);
 }
 
-export function isDebugBabelActive() {
-	return config['debug-babel'] || false;
+export function getOutputDir() {
+	return config['output'] || 'build/resources/main/META-INF/resources';
 }
 
 export function getExclusions(pkg) {
